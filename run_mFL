@@ -1,0 +1,88 @@
+#!/usr/bin/env python
+"""
+Starting point for a Plato federated learning training session.
+"""
+import logging
+import os
+from plato.servers import registry as server_registry
+from functools import partial
+
+import torch
+from torch import nn
+from torchvision.datasets import MNIST
+from torchvision.transforms import ToTensor
+
+from plato.clients import simple
+from plato.datasources import base
+from plato.servers import fedavg
+from plato.trainers import basic
+
+os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
+os.environ["MKL_THREADING_LAYER"] = "GNU"
+os.environ["TOKENIZERS_PARALLELISM"] = "false"
+
+
+class MFTrainer(basic.Trainer):
+    """A custom trainer with custom training and testing loops."""
+
+    # pylint: disable=unused-argument
+    def train_model(self, config, trainset, sampler, **kwargs):
+        """A custom training loop."""
+        optimizer = torch.optim.Adam(self.model.parameters(), lr=1e-3)
+        criterion = nn.CrossEntropyLoss()
+
+        train_loader = torch.utils.data.DataLoader(
+            dataset=trainset,
+            shuffle=False,
+            batch_size=config["batch_size"],
+            sampler=sampler,
+        )
+
+        num_epochs = config["epochs"]
+        self.current_epoch = 0
+        print("111111111111")
+        for self.current_epoch in range(num_epochs):
+            for examples, labels in train_loader:
+                examples = examples.view(len(examples), -1)
+
+                logits = self.model(examples)
+                loss = criterion(logits, labels)
+                print("train loss: ", loss.item())
+
+                loss.backward()
+                optimizer.step()
+                optimizer.zero_grad()
+
+    def test_model(self, config, testset, sampler=None, **kwargs):  # pylint: disable=unused-argument
+        """A custom testing loop."""
+        test_loader = torch.utils.data.DataLoader(
+            testset, batch_size=config["batch_size"], shuffle=False
+        )
+
+        correct = 0
+        total = 0
+
+        with torch.no_grad():
+            for examples, labels in test_loader:
+                examples, labels = examples.to(self.device), labels.to(self.device)
+
+                examples = examples.view(len(examples), -1)
+                outputs = self.model(examples)
+                _, predicted = torch.max(outputs.data, 1)
+                total += labels.size(0)
+                correct += (predicted == labels).sum().item()
+
+        accuracy = correct / total
+        return accuracy
+
+
+def main():
+    """Starting point for a Plato federated learning training session."""
+    trainer = MFTrainer
+    server = fedavg.Server(trainer=trainer)
+    #server = server_registry.get()
+    server.run()
+
+
+if __name__ == "__main__":
+    main()
