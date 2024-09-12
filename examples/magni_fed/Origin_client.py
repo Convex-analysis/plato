@@ -94,5 +94,9 @@ class Origin_client(simple.Client):
         report.quality = self.quality
         report.epoch_rate = self.trainer.get_epoch_rate()
         report.alpha = self.trainer.get_alpha()
+
+        #记录训练数据后将对应参数回归初始化设置
+        self.trainer.set_epoch_rate(1)
+        self.trainer.set_alpha(1)
         logging.info("quality: %s, epoch_rate: %f, alpha: %f" % (report.quality, report.epoch_rate, report.alpha))
         return report

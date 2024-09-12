@@ -6,24 +6,27 @@ clients:
     total_clients: 10
 
     # The number of clients selected in each round
-    per_round: 3
+    per_round: 2
 
     # Should the clients compute test accuracy locally?
-    do_test: true
+    do_test: false
+
+    # Processors for outbound data payloads
+    outbound_processors:
+        - unstructured_pruning
+        - model_compress
 
 server:
     address: 127.0.0.1
     port: 8000
+    random_seed: 1
+    simulate_wall_time: true
 
-data:
-    # The training and testing dataset
-    datasource: FashionMNIST
+    # Processors for inbound data payloads
+    inbound_processors:
+        - model_decompress
 
-    # Number of samples in each partition
-    partition_size: 20000
-
-    # IID or non-IID?
-    sampler: iid
+data: !include mnist_iid.yml
 
 trainer:
     # The type of the trainer
@@ -36,13 +39,13 @@ trainer:
     max_concurrency: 1
 
     # The target accuracy
-    target_accuracy: 0.88
+    target_accuracy: 0.97
 
     # The machine learning model
     model_name: lenet5
-    
+
     # Number of epoches for local training in each communication round
-    epochs: 1
+    epochs: 5
     batch_size: 32
     optimizer: SGD
 
@@ -51,6 +54,9 @@ algorithm:
     type: fedavg
 
 parameters:
+    model:
+        num_classes: 10
+        
     optimizer:
         lr: 0.01
         momentum: 0.9
