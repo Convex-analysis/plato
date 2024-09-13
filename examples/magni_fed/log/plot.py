@@ -1,5 +1,6 @@
 import pandas as pd
 from matplotlib import pyplot as plt
+import os
 from scipy.ndimage import gaussian_filter1d
 
 def plot_acc_comparison(filename):
@@ -75,6 +76,7 @@ def impact_on_mobility(filename):
     plt.ylabel('accuracy',fontdict={'size': 18})
     plt.tick_params(labelsize=13)
     plt.legend(fontsize=15)
+    filename = filename.split(".")[0]
     plt.savefig(filename + ".png")
 
 if __name__ == "__main__":
@@ -97,5 +99,10 @@ if __name__ == "__main__":
     impact_of_noniid_on_shceme("D:/EXP/plato/examples/magni_fed/log/EMINSTnoniid100R.csv")
     impact_on_mobility("examples\magni_fed\log\FashionMINSTmobi100R.csv")
     """
-    impact_on_mobility("D:/EXP/plato/examples/magni_fed/log/EMINSTCompare200RAVG.csv")
-    #impact_on_mobility("D:/EXP/plato/examples/magni_fed/log/EMINSTmobi100RAVG.csv")
+    defalut_path = "C:/Users/79944/plato/examples/magni_fed/log"
+    for file in os.listdir(defalut_path):
+        filename = file.split(".")[0] + ".png"
+        if file.endswith(".csv") and os.path.exists(defalut_path + "/" + filename) == False:
+            print(file)
+            impact_on_mobility(defalut_path + "/" + file)
+           
