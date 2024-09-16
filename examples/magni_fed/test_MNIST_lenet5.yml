@@ -15,7 +15,7 @@ server:
     address: 127.0.0.1
     port: 8000
     random_seed: 1
-    simulate_wall_time: true
+    simulate_wall_time: false
 
 data: !include mnist_noniid.yml
 
@@ -27,13 +27,13 @@ trainer:
     rounds: 50
 
     # The target accuracy
-    target_accuracy: 0.97
+    target_accuracy: 1
 
     # The machine learning model
     model_name: lenet5
 
     # Number of epoches for local training in each communication round
-    epochs: 10
+    epochs: 1
     batch_size: 32
     optimizer: SGD
 
