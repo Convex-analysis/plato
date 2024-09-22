@@ -99,8 +99,9 @@ if __name__ == "__main__":
     impact_of_noniid_on_shceme("D:/EXP/plato/examples/magni_fed/log/EMINSTnoniid100R.csv")
     impact_on_mobility("examples\magni_fed\log\FashionMINSTmobi100R.csv")
     """
-    defalut_path = "./"
+    defalut_path = "./examples/magni_fed/log"
     for file in os.listdir(defalut_path):
+        print(file)
         filename = file.split(".")[0] + ".png"
         if file.endswith(".csv") and os.path.exists(defalut_path + "/" + filename) == False:
             print(file)
