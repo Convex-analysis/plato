@@ -60,8 +60,8 @@ def impact_of_noniid_on_shceme(filename):
     plt.savefig(filename + ".png")
 
 def impact_on_mobility(filename):
-    linestyles = ['-.', ':', 'solid', 'dashed']
-    marks = ['.', '^', '<', '>']
+    linestyles = ['-.', ':', 'solid', 'dashed', '-']
+    marks = ['.', '^', '<', '>', '+']
     data = pd.read_csv(filename)
     aixs_x = data['round']
     aixs_y = []
@@ -76,8 +76,10 @@ def impact_on_mobility(filename):
     plt.ylabel('accuracy',fontdict={'size': 18})
     plt.tick_params(labelsize=13)
     plt.legend(fontsize=15)
+    filename = filename.split("/")[-1]
     filename = filename.split(".")[0]
-    plt.savefig(filename + ".png")
+    save_path = "./examples/magni_fed/log/" + filename + ".png"
+    plt.savefig(save_path)
 
 if __name__ == "__main__":
     """
@@ -101,7 +103,6 @@ if __name__ == "__main__":
     """
     defalut_path = "./examples/magni_fed/log"
     for file in os.listdir(defalut_path):
-        print(file)
         filename = file.split(".")[0] + ".png"
         if file.endswith(".csv") and os.path.exists(defalut_path + "/" + filename) == False:
             print(file)
