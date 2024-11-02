@@ -9,9 +9,9 @@ import torch
 import torch.utils.data as data
 from torchvision import transforms
 from PIL import Image
-from .base_io_dataset import BaseIODataset
-from .heatmap_utils import generate_heatmap, generate_future_waypoints, get_yaw_angle
-from .det_utils import generate_det_data
+from base_io_dataset import BaseIODataset
+from heatmap_utils import generate_heatmap, generate_future_waypoints, get_yaw_angle
+from det_utils import generate_det_data
 from skimage.measure import block_reduce
 
 _logger = logging.getLogger(__name__)

@@ -9,7 +9,7 @@ import cv2
 import numpy as np
 
 from skimage.measure import block_reduce
-from .heatmap_utils import generate_heatmap, get_yaw_angle
+from heatmap_utils import generate_heatmap, get_yaw_angle
 
 
 def convert_grid_to_xy(i, j):

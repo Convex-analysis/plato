@@ -9,12 +9,12 @@ Hacked together by / Copyright 2020 Ross Wightman
 import torch.utils.data
 import numpy as np
 
-from .transforms_carla_factory import (
+from transforms_carla_factory import (
     create_carla_rgb_transform,
     create_carla_seg_transform,
 )
-from .constants import IMAGENET_DEFAULT_MEAN, IMAGENET_DEFAULT_STD
-from .distributed_sampler import OrderedDistributedSampler
+from constants import IMAGENET_DEFAULT_MEAN, IMAGENET_DEFAULT_STD
+from distributed_sampler import OrderedDistributedSampler
 
 
 def create_carla_loader(

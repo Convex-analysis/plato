@@ -1,7 +1,7 @@
 import os
 
-from .dataset import IterableImageDataset, ImageDataset
-from .carla_dataset import CarlaMVDetDataset
+from dataset import IterableImageDataset, ImageDataset
+from carla_dataset import CarlaMVDetDataset
 
 
 def _search_split(root, split):
