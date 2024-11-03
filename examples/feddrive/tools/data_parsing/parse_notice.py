@@ -92,6 +92,10 @@ notice_data = {}
 
 def process_notice(line):
     try:
+        curr_dir = Path(__file__).parent
+        dataset_root = sys.argv[1]
+        scenarios_dir = os.path.join(curr_dir, "../../", "leaderboard/data/scenarios")
+        
         processed_data = []
         path, frames = line.split()
         dir_path = os.path.join(dataset_root, path)
@@ -144,7 +148,7 @@ if __name__ == '__main__':
     scenarios_dir = os.path.join(curr_dir, "../../", "leaderboard/data/scenarios")
     lines = open(os.path.join(dataset_root, "dataset_index.txt")).readlines()
 
-    with Pool(8) as p:
+    with Pool(2) as p:
         n_list = list(tqdm(p.imap(process_notice, lines), total=len(lines)))
 
     f_write_notice = open(os.path.join(output_dir, "notice_instruction_list.json"), 'w')

@@ -176,13 +176,15 @@ class CarlaMVDetDataset(BaseIODataset):
     def _get_frames_paths(self, root, weathers, towns):
         route_frames = []
         route_dir_nums = 0
-        dataset_indexs = self._load_text(os.path.join(root, 'dataset_index_test.txt')).split('\n')
+        #dataset_indexs = self._load_text(os.path.join(root, 'dataset_index_test.txt')).split('\n')
+        dataset_indexs = self._load_text(os.path.join(root, 'dataset_index.txt')).split('\n')
         pattern = re.compile('town(\d\d).*w(\d+)')
         for line in dataset_indexs:
             if len(line.split()) != 2:
                 continue
             path, frames = line.split()
-            path = os.path.join(root, 'data', path)
+            path = os.path.join(root, path)
+            #path = os.path.join(root, 'data', path)
             frames = int(frames)
             res = pattern.findall(path)
             if len(res) != 1:

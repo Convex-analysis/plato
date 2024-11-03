@@ -93,6 +93,7 @@ def process(line):
     try:
         processed_data = []
         path, frames = line.split()
+        dataset_root = sys.argv[1]
         dir_path = os.path.join(dataset_root, path)
         frames = int(frames.strip())
         town_id = int(re.findall(r'town(\d\d)', dir_path)[0])
@@ -137,7 +138,7 @@ if __name__ == '__main__':
     list_file = os.path.join(dataset_root, 'dataset_index.txt')
     lines = open(list_file, 'r').readlines()
 
-    with Pool(8) as p:
+    with Pool(2) as p:
         r_list = list(tqdm(p.imap(process, lines), total=len(lines)))
 
     f_write = open(os.path.join(dataset_root, 'navigation_instruction_list.txt'), 'w')

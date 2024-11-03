@@ -22,8 +22,8 @@ args = {
     "workers" : 4,
     "distributed" : False,
     "pin_mem" : False,
-    "train_towns" : "Town01",
-    "train_weathers" : 10,
+    "train_towns" : [1,2,3,4,5,6,7,10],
+    "train_weathers" : [0,1,2,3,4,5,6,7,8,9,10,11,14,15,16,17,18,19],
     "with_lidar" : True,
     "with_seg" : False,
     "with_depth" : False,
@@ -90,5 +90,6 @@ if __name__ == "__main__":
     
     loader = initialize_loader()   
     
-    for i, (data, target) in enumerate(loader):
-        print(i)
+    for examples, labels in loader:
+        print(examples.shape)
+        break
