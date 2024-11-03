@@ -1,6 +1,15 @@
 from carla_dataset import CarlaMVDetDataset
 from carla_loader import create_carla_loader
-from dataset_factory import create_dataset
+from dataset_factory import create_carla_dataset
+import logging
+import torch
+import torch.nn as nn
+from functools import partial
+
+#from plato.clients import simple
+from plato.datasources import base
+#from plato.trainers import basic
+
 args = {
     "dataset" : "carla",
     "batch_size" : 24,
@@ -13,6 +22,14 @@ args = {
     "workers" : 4,
     "distributed" : False,
     "pin_mem" : False,
+    "train_towns" : "Town01",
+    "train_weathers" : 10,
+    "with_lidar" : True,
+    "with_seg" : False,
+    "with_depth" : False,
+    "multi_view" : True,
+    "augment_prob" : 0.0,
+    "temporal_frames" : False
 }
 
 data_config = {
@@ -20,22 +37,39 @@ data_config = {
     "mean" : [0.485, 0.456, 0.406],
     "std" : [0.229, 0.224, 0.225]
 }
+
 train_interpolation = "bilinear"
 collate_fn = None
 path = 'D:\EXP\CarlaData'
-dataset_train = create_dataset(
+
+
+
+
+class DataSource(base.DataSource):
+    """A custom datasource with custom training and validation datasets."""
+
+    def __init__(self):
+        super().__init__()
+
+        self.trainset = create_carla_dataset(
             args["dataset"],
             root=args["data_dir"],
-            split=args["train_split"],
-            is_training=True,
+            towns=args["train_towns"],
+            weathers=args["train_weathers"],
             batch_size=args["batch_size"],
-            repeats=args["epoch_repeats"],
+            with_lidar=args["with_lidar"],
+            with_seg=args["with_seg"],
+            with_depth=args["with_depth"],
+            multi_view=args["multi_view"],
+            augment_prob=args["augment_prob"],
+            temporal_frames=args["temporal_frames"],
         )
 
-print(dataset_train.__len__())
 
-data_train = create_carla_loader(
-        dataset_train,
+def initialize_loader():
+        carlaSource = DataSource()
+        data_train_loader = create_carla_loader(
+        carlaSource.trainset,
         input_size=data_config["input_size"],
         batch_size=args["batch_size"],
         multi_view_input_size=args["multi_view_input_size"],
@@ -50,5 +84,11 @@ data_train = create_carla_loader(
         collate_fn=collate_fn,
         pin_memory=args["pin_mem"],
     )
-
-print(data_train.pin_memory)
+        return data_train_loader
+    
+if __name__ == "__main__":
+    
+    loader = initialize_loader()   
+    
+    for i, (data, target) in enumerate(loader):
+        print(i)
