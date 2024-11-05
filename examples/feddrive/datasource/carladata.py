@@ -6,9 +6,29 @@ import torch
 import torch.nn as nn
 from functools import partial
 
+from timm.data import create_carla_dataset, create_carla_loader
+from timm.models import (
+    create_model,
+    safe_model_name,
+    resume_checkpoint,
+    load_checkpoint,
+    convert_splitbn_model,
+    model_parameters,
+)
+from timm.utils import *
+from timm.loss import (
+    LabelSmoothingCrossEntropy,
+    SoftTargetCrossEntropy,
+    JsdCrossEntropy,
+)
+from timm.optim import create_optimizer_v2, optimizer_kwargs
+from timm.scheduler import create_scheduler
+from timm.utils import ApexScaler, NativeScaler
+
+
 #from plato.clients import simple
 from plato.datasources import base
-#from plato.trainers import basic
+from plato.trainers import basic
 
 args = {
     "dataset" : "carla",
@@ -44,26 +64,7 @@ path = 'D:\EXP\CarlaData'
 
 
 
-
-class DataSource(base.DataSource):
-    """A custom datasource with custom training and validation datasets."""
-
-    def __init__(self):
-        super().__init__()
-
-        self.trainset = create_carla_dataset(
-            args["dataset"],
-            root=args["data_dir"],
-            towns=args["train_towns"],
-            weathers=args["train_weathers"],
-            batch_size=args["batch_size"],
-            with_lidar=args["with_lidar"],
-            with_seg=args["with_seg"],
-            with_depth=args["with_depth"],
-            multi_view=args["multi_view"],
-            augment_prob=args["augment_prob"],
-            temporal_frames=args["temporal_frames"],
-        )
+        
 
 
 def initialize_loader():
@@ -90,6 +91,48 @@ if __name__ == "__main__":
     
     loader = initialize_loader()   
     
+    model = create_model(
+        args.model,
+        pretrained=args.pretrained,
+        drop_rate=args.drop,
+        drop_connect_rate=args.drop_connect,  # DEPRECATED, use drop_path
+        drop_path_rate=args.drop_path,
+        drop_block_rate=args.drop_block,
+        global_pool=args.gp,
+        bn_tf=args.bn_tf,
+        bn_momentum=args.bn_momentum,
+        bn_eps=args.bn_eps,
+        scriptable=args.torchscript,
+        checkpoint_path=args.initial_checkpoint,
+        freeze_num=args.freeze_num,
+    )
+    
+    # setup loss function
+    if args.smoothing > 0:
+        cls_loss = LabelSmoothingCrossEntropy(smoothing=args.smoothing)
+    else:
+        cls_loss = nn.CrossEntropyLoss()
+
+    if args.smoothed_l1:
+        l1_loss = torch.nn.SmoothL1Loss
+    else:
+        l1_loss = torch.nn.L1Loss
+    
+    train_loss_fns = {
+        #"traffic": MVTL1Loss(1.0, l1_loss=l1_loss),
+        "traffic": LAVLoss(),
+        "waypoints": torch.nn.L1Loss(),
+        "cls": cls_loss,
+        "stop_cls": cls_loss,
+    }
+    validate_loss_fns = {
+        #"traffic": MVTL1Loss(1.0, l1_loss=l1_loss),
+        "traffic": LAVLoss(),
+        "waypoints": torch.nn.L1Loss(),
+        "cls": cls_loss,
+        "stop_cls": cls_loss,
+    }
+    
     for examples, labels in loader:
-        print(examples.shape)
+        print(examples)
         break
