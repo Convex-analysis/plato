@@ -1,0 +1,238 @@
+#type=int, default=[0], help="dataset train towns (default: [0])" from 1 to 10
+train-towns: 
+
+#type=int, default=[0], help="dataset train weathers (default: [0])" from 1 to 20
+train-weathers:
+
+#type=int, default=[1], help="dataset validation towns (default: [1])" from 1 to 10
+val-towns:
+
+#type=int, default=[1], help="dataset validation weathers (default: [1])" from 1 to 20
+val-weathers:
+
+#default=False help="StarAt with pretrained version of specified network (if avail)"
+saver-decreasing: 
+
+#default=False, help="load lidar data in the dataset",
+with-lidar:
+#default=False, help="load segmentation data in the dataset"
+with-seg:
+#default=False, help="load depth data in the dataset"
+with-depth:
+#default=False, help="load multi-view data in the dataset"
+multi-view:
+#default=None, nargs=3, type=int, metavar="N N N", help="Input all image dimensions (d h w, e.g. --input-size 3 224 224) for left- right- or rear- view"
+multi-view-input-size:
+#type=int, default=1, help="Number of frames of the input"
+temporal-frames:
+#type=int, default=-1, help="Number of freeze layers in the backbone"
+freeze-num:
+#type=float, default=5e-4, help="The learning rate for backbone"
+backbone-lr:
+#default=False, help="The learning rate for backbone is set as backbone-lr"
+with-backbone-lr:
+
+# Dataset / Model parameters
+#help="path to dataset"
+data_dir:
+#metavar="NAME", default="newcarla", help="dataset type (default: ImageFolder/ImageTar if empty)"
+dataset:
+#default="train", help="dataset train split (default: train)"
+train-split:
+#default="validation", help="dataset validation split (default: validation)",
+val-split:
+#default="resnet101", type=str, metavar="MODEL", help='Name of model to train (default: "countception"'
+model:
+#default=False, help="Start with pretrained version of specified network (if avail)",
+pretrained:
+#default="", type=str, metavar="PATH", help="Initialize model from this checkpoint (default: none)"
+initial-checkpoint:
+# default="", type=str, metavar="PATH", help="Resume full model and optimizer state from checkpoint (default: none)",
+resume:
+#action="store_true",default=False,help="prevent resume of optimizer state when resuming model",
+no-resume-opt:
+#type=int, default=None, metavar="N", help="number of label classes (Model default if None)"
+num-classes:
+#default=None, type=str, metavar="POOL", help="Global pool type, one of (fast, avg, max, avgmax, avgmaxc). Model default if None."
+gp:
+#type=int, default=None, metavar="N", help="Image patch size (default: None => model default)"
+img-size:
+#default=None, nargs=3, type=int, metavar="N N N", help="Input all image dimensions (d h w, e.g. --input-size 3 224 224), uses model default if empty",
+input-size:
+#default=None, type=float, metavar="N", help="Input image center crop percent (for validation only)",
+crop-pct:
+#type=float, nargs="+", default=None, metavar="MEAN", help="Override mean pixel value of dataset",
+mean:
+#type=float, default=None, metavar="STD", help="Override std deviation of of dataset",
+std:
+#default="", type=str, metavar="NAME", help="Image resize interpolation type (overrides model)"
+interpolation:
+#type=int, default=32, metavar="N", help="input batch size for training (default: 32)",
+batch-size:
+#type=int, default=1, metavar="N", help="ratio of validation batch size to training batch size (default: 1)"
+validation-batch-size-multiplier:
+#type=float, default=0.0,
+augment-prob:
+
+# Optimizer parameters
+#default="sgd", type=str, metavar="OPTIMIZER", help='Optimizer (default: "sgd"'
+opt:
+#default=None, type=float, metavar="EPSILON", help="Optimizer Epsilon (default: None, use opt default)"
+opt-eps:
+#default=None, type=float, metavar="BETA", help="Optimizer Betas (default: None, use opt default)"
+opt-betas:
+#type=float, default=0.9, metavar="M", help="Optimizer momentum (default: 0.9)"
+momentum:
+#type=float, default=0.0001, help="weight decay (default: 0.0001)"
+weight-decay:
+#type=float, default=None, metavar="NORM", help="Clip gradient norm (default: None, no clipping)",
+clip-grad:
+#type=str, default="norm", help='Gradient clipping mode. One of ("norm", "value", "agc")'
+clip-mode:
+
+# Learning rate schedule parameters
+# default="cosine", type=str, metavar="SCHEDULER", help='LR scheduler (default: "step"'
+sched:
+#type=float, default=5e-4, metavar="LR", help="learning rate (default: 0.01)"
+lr:
+#type=float, nargs="+", default=None, metavar="pct, pct", help="learning rate noise on/off epoch percentages"
+lr-noise:
+#type=float, default=0.67, metavar="PERCENT", help="learning rate noise limit percent (default: 0.67)"
+lr-noise-pct:
+#type=float, default=1.0, metavar="STDDEV", help="learning rate noise std-dev (default: 1.0)"
+lr-noise-std:
+#type=float, default=1.0, help="learning rate cycle len multiplier (default: 1.0)"
+lr-cycle-mul:
+#type=int, default=1, help="learning rate cycle limit"
+lr-cycle-limit:
+#type=float, default=5e-6, help="warmup learning rate (default: 0.0001)",
+warmup-lr:
+#type=float, default=1e-5, metavar="LR", help="lower lr bound for cyclic schedulers that hit 0 (1e-5)"
+min-lr:
+#type=int, default=200, help="number of epochs to train (default: 2)"
+epochs:
+#type=float, default=0.0, help="epoch repeat multiplier (number of times to repeat dataset epoch per train epoch)."
+epoch-repeats:
+#default=None, type=int, help="manual epoch number (useful on restarts)"
+start-epoch:
+#type=float, default=30, help="epoch interval to decay LR"
+decay-epochs:
+#type=int, default=5, help="epochs to warmup LR, if scheduler supports"
+warmup-epochs:
+#type=int, default=10, help="epochs to cooldown LR at min_lr, after cyclic schedule ends"
+cooldown-epochs:
+#type=int, default=10, help="patience epochs for Plateau LR scheduler (default: 10"
+patience-epochs:
+#type=float, default=0.1, help="LR decay rate (default: 0.1)"
+decay-rate:
+
+# Augmentation & regularization parameters
+#default=False, help="Disable all training augmentation, override other train aug args"
+no-aug:
+#type=float, default=[0.08, 1.0], metavar="PCT", help="Random resize scale (default: 0.08 1.0)",
+scale:
+#type=float, default=[3.0 / 4.0, 4.0 / 3.0], metavar="RATIO", help="Random resize aspect ratio (default: 0.75 1.33)"
+ratio:
+#type=float, default=0.5, help="Horizontal flip training aug probability"
+hflip:
+#type=float, default=0.0, help="Vertical flip training aug probability"
+vflip:
+#type=float, default=0.1, metavar="PCT", help="Color jitter factor (default: 0.4)"
+color-jitter:
+#type=str, default=None, help='Use AutoAugment policy. "v0" or "original". (default: None)'
+aa:
+#type=int, default=0, help="Number of augmentation splits (default: 0, valid: 0 or >=2)"
+aug-splits:
+#default=False, help="Enable Jensen-Shannon Divergence + CE loss. Use with `--aug-splits`."
+jsd:
+#type=float, default=0.0, metavar="PCT", help="Random erase prob (default: 0.)"
+reprob:
+#type=str, default="const", help='Random erase mode (default: "const")'
+remode:
+#type=int, default=1, help="Random erase count (default: 1)"
+recount:
+#default=False, help="Do not random erase first (clean) augmentation split"
+resplit:
+#type=float, default=0.0, help="Label smoothing (default: 0.0)"
+smoothing:
+#default=False, action='store_true', help="L1 smooth"
+smoothed_l1:
+#default="random", help='Training interpolation (random, bilinear, bicubic default: "random")'
+train-interpolation:
+#type=float, default=0.0, metavar="PCT", help="Dropout rate (default: 0.)"
+drop:
+#type=float, default=None, help="Drop connect rate, DEPRECATED, use drop-path (default: None)"
+drop-connect:
+#type=float, default=0.1, help="Drop path rate (default: None)"
+drop-path:
+#type=float, default=None, help="Drop block rate (default: None)"
+drop-block:
+
+# Batch norm parameters (only works with gen_efficientnet based models currently)
+
+#default=False, help="Use Tensorflow BatchNorm defaults for models that support it (default: False)"
+bn-tf:
+#default=None, help="BatchNorm momentum override (if not None)"
+bn-momentum:
+#default=None, help="BatchNorm epsilon override (if not None)"
+bn-eps:
+#help="Enable NVIDIA Apex or Torch synchronized BatchNorm."
+sync-bn:
+#default="", help='Distribute BatchNorm stats between nodes after each epoch ("broadcast", "reduce", or "")'
+dist-bn:
+#help="Enable separate BN layers per augmentation split."
+split-bn:
+
+# Model Exponential Moving Average
+
+#default=False, help="Enable tracking moving average of model weights"
+model-ema:
+#default=False, help="Force ema to be tracked on CPU, rank=0 node only. Disables EMA validation.",
+model-ema-force-cpu:
+#default=0.9998, help="decay factor for model weights moving average (default: 0.9998)"
+model-ema-decay:
+
+# Misc
+#type=int, default=42, metavar="S", help="random seed (default: 42)"
+seed:
+#default=50, help="how many batches to wait before logging training status"
+log-interval:
+#default=0, help="how many batches to wait before writing recovery checkpoint",
+recovery-interval:
+#default=5, help="number of checkpoints to keep (default: 10)"
+checkpoint-hist:
+#default=4, help="how many training processes to use (default: 1)"
+workers:
+#default=False, help="save images of input bathes every log interval for debugging"
+save-images:
+# default=False, help="use NVIDIA Apex AMP or Native AMP for mixed precision training"
+amp:
+#default=False, help="Use NVIDIA Apex AMP mixed precision"
+apex-amp:
+#default=False, help="Use Native Torch AMP mixed precision"
+native-amp:
+#default=False, help="Use channels_last memory layout"
+channels-last:
+#default=False, help="Pin CPU memory in DataLoader for more efficient (sometimes) transfer to GPU."
+pin-mem:
+#default=False, help="disable fast prefetcher"
+no-prefetcher:
+#help="path to output folder (default: none, current dir)"
+output:
+#default="", help="name of train experiment, name of sub-folder for output"
+experiment:
+#default="top1", type=str,  metavar="EVAL_METRIC", help='Best metric (default: "top1"'
+eval-metric:
+#default=0, help="Test/inference time augmentation (oversampling) factor. 0=None (default: 0)"
+tta:
+#default=0, type=int
+local-rank:
+#default=False, help="use the multi-epochs-loader to save time at the beginning of every epoch"
+use-multi-epochs-loader:
+#help="convert model torchscript for inference"
+torchscript:
+#default=False, help="log training and validation metrics to wandb"
+log-wandb:
+
+
+
