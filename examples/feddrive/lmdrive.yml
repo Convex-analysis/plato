@@ -92,8 +92,10 @@ clip-mode:
 
 # Learning rate schedule parameters
 # default="cosine", type=str, metavar="SCHEDULER", help='LR scheduler (default: "step"'
+#第一次调用是在scheduler_factory.py中的create_scheduler_v2函数中，默认为cosine
 sched:
 #type=float, default=5e-4, metavar="LR", help="learning rate (default: 0.01)"
+#第一次调用是在drivetrainer.py的get_optimizer中使用，在计算了linear_scaled_lr，对args.lr重新进行了赋值
 lr:
 #type=float, nargs="+", default=None, metavar="pct, pct", help="learning rate noise on/off epoch percentages"
 lr-noise:
