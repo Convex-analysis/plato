@@ -1,56 +1,60 @@
 from plato.trainers import basic
 
+
 class DriveTrainer(basic.Trainer):
-    
+    def __init__(self, args, model=None, callbacks=None):
+        super().__init__(model, callbacks)
+        self.args = args
+
     def get_train_loader(self, batch_size, trainset, sampler, **kwargs):
-        train_loader =  create_carla_loader(
-        trainset,
-        input_size=data_config["input_size"],
-        batch_size=batch_size,
-        multi_view_input_size=args["multi_view_input_size"],
-        is_training=True,
-        scale=args["scale"],
-        color_jitter=args["color_jitter"],
-        interpolation=train_interpolation,
-        mean=data_config["mean"],
-        std=data_config["std"],
-        num_workers=args["workers"],
-        distributed=args["distributed"],
-        collate_fn=collate_fn,
-        pin_memory=args["pin_mem"],
-    )
+        train_loader = create_carla_loader(
+            trainset,
+            input_size=data_config["input_size"],
+            batch_size=batch_size,
+            multi_view_input_size=self.args["multi_view_input_size"],
+            is_training=True,
+            scale=self.args["scale"],
+            color_jitter=self.args["color_jitter"],
+            interpolation=train_interpolation,
+            mean=data_config["mean"],
+            std=data_config["std"],
+            num_workers=self.args["workers"],
+            distributed=self.args["distributed"],
+            collate_fn=collate_fn,
+            pin_memory=self.args["pin_mem"],
+        )
         return train_loader
     
     def get_test_loader(self, batch_size, testset, sampler, **kwargs):
-        test_loader = create_carla_dataset(
-            args.dataset,
-            root=args.data_dir,
-            towns=args.val_towns,
-            weathers=args.val_weathers,
-            batch_size=args.batch_size,
-            with_lidar=args.with_lidar,
-            with_seg=args.with_seg,
-            with_depth=args.with_depth,
-            multi_view=args.multi_view,
-            augment_prob=args.augment_prob,
-            temporal_frames=args.temporal_frames,
+        test_loader = create_carla_loader(
+            dataset_eval,
+            input_size=data_config["input_size"],
+            batch_size=self.args.validation_batch_size_multiplier * self.args.batch_size,
+            multi_view_input_size=args.multi_view_input_size,
+            is_training=False,
+            interpolation=data_config["interpolation"],
+            mean=data_config["mean"],
+            std=data_config["std"],
+            num_workers=self.args.workers,
+            distributed=self.args.distributed,
+            pin_memory=self.args.pin_mem,
         )
         
         return test_loader
     
     def get_optimizer(self, model):
         linear_scaled_lr = (
-        args.lr * args.batch_size * torch.distributed.get_world_size() / 512.0
+            self.args.lr * self.args.batch_size * torch.distributed.get_world_size() / 512.0
         )
-        args.lr = linear_scaled_lr
-        if args.with_backbone_lr:
-            if args.local_rank == 0:
+        self.args.lr = linear_scaled_lr
+        if self.args.with_backbone_lr:
+            if self.args.local_rank == 0:
                 _logger.info(
                     "CNN backbone and transformer blocks using different learning rates!"
                 )
             backbone_linear_scaled_lr = (
-                args.backbone_lr
-                * args.batch_size
+                self.args.backbone_lr
+                * self.args.batch_size
                 * torch.distributed.get_world_size()
                 / 512.0
             )
@@ -61,7 +65,7 @@ class DriveTrainer(basic.Trainer):
                     backbone_weights.append(weight)
                 else:
                     other_weights.append(weight)
-            if args.local_rank == 0:
+            if self.args.local_rank == 0:
                 _logger.info(
                     "%d weights in the cnn backbone, %d weights in other modules"
                     % (len(backbone_weights), len(other_weights))
@@ -71,10 +75,10 @@ class DriveTrainer(basic.Trainer):
                     {"params": other_weights},
                     {"params": backbone_weights, "lr": backbone_linear_scaled_lr},
                 ],
-                **optimizer_kwargs(cfg=args),
+                **optimizer_kwargs(cfg=self.args),
             )
         else:
-            optimizer = create_optimizer_v2(model, **optimizer_kwargs(cfg=args))
+            optimizer = create_optimizer_v2(model, **optimizer_kwargs(cfg=self.args))
         
         return optimizer
     
@@ -114,7 +118,7 @@ class DriveTrainer(basic.Trainer):
                 loader_train,
                 optimizer,
                 train_loss_fns,
-                args,
+                self.args,
                 writer,
                 lr_scheduler=lr_scheduler,
                 saver=saver,
@@ -163,35 +167,35 @@ class DriveTrainer(basic.Trainer):
         
         loader_eval = self.get_test_loader(config["batch_size"], testset, sampler)
         validate_loss_fns = {
-        #"traffic": MVTL1Loss(1.0, l1_loss=l1_loss),
-        "traffic": LAVLoss(),
-        "waypoints": torch.nn.L1Loss(),
-        "cls": cls_loss,
-        "stop_cls": cls_loss,
-            }
+            #"traffic": MVTL1Loss(1.0, l1_loss=l1_loss),
+            "traffic": LAVLoss(),
+            "waypoints": torch.nn.L1Loss(),
+            "cls": cls_loss,
+            "stop_cls": cls_loss,
+        }
         eval_metrics = self.validate(
-                epoch,
-                model,
-                loader_eval,
-                validate_loss_fns,
-                args,
-                writer,
-                amp_autocast=amp_autocast,
-            )
+            epoch,
+            model,
+            loader_eval,
+            validate_loss_fns,
+            self.args,
+            writer,
+            amp_autocast=amp_autocast,
+        )
         return eval_metrics
     
     def get_loss_criterion(self):
         train_loss_fns = {
-        #"traffic": MVTL1Loss(1.0, l1_loss=l1_loss),
-        "traffic": LAVLoss(),
-        "waypoints": torch.nn.L1Loss(),
-        "cls": cls_loss,
-        "stop_cls": cls_loss,
-    }
+            #"traffic": MVTL1Loss(1.0, l1_loss=l1_loss),
+            "traffic": LAVLoss(),
+            "waypoints": torch.nn.L1Loss(),
+            "cls": cls_loss,
+            "stop_cls": cls_loss,
+        }
         return train_loss_fns
     
     def get_lr_scheduler(self, config, optimizer):
-        return create_scheduler(args, optimizer)
+        return create_scheduler(self.args, optimizer)
     
     def train_one_epoch(
         self, 
