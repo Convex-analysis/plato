@@ -9,6 +9,7 @@ from Origin_trainer import Origin_trainer
 from Origin_client import Origin_client
 from Origin_server import Origin_server
 from plato.config import Config
+from MaroScheduleServer import Macro_server # Add this line to import Macro_server
 
 
 #按执行的比例聚合
@@ -41,9 +42,13 @@ class Scheme2_server(Origin_server):
 #Origin_server就是第三中我们自己的聚合方法
 
 def main():
+    with_MRscehduler = True
     trainer = Origin_trainer
     client = Origin_client(trainer=trainer)
-    server = Scheme2_server(trainer=trainer)
+    if with_MRscehduler:
+        server = Macro_server(trainer=trainer)
+    else:
+        server = Scheme2_server(trainer=trainer)
     server.run(client)
 
 

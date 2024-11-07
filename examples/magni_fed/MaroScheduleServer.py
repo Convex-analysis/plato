@@ -38,7 +38,7 @@ class Macro_server(fedavg.Server):
     def choose_clients(self, clients_pool, clients_count):
         """Chooses a subset of the clients to participate in each round."""
         #clients_count = math.floor(self.current_round / 10) + clients_count
-        if self.current_round % 10 == 0:
+        if self.current_round % 20 == 0:
             clients_count = clients_count + 1
         if clients_count >= len(clients_pool):
             clients_count = len(clients_pool)

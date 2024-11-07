@@ -1,51 +1,29 @@
-import argparse
-import time
-import yaml
+"""
+DriveTrainer module for training autonomous driving models.
+"""
+
 import os
+import time
 import logging
 from collections import OrderedDict
 from contextlib import suppress
 from datetime import datetime
-from render import render, render_waypoints
 
 import torch
-import torch.nn as nn
+from torch import nn
 import torchvision.utils
 from torch.nn.parallel import DistributedDataParallel as NativeDDP
 
-from timm.data import (
-    create_dataset,
-    create_loader,
-    resolve_data_config,
-    Mixup,
-    FastCollateMixup,
-    AugMixDataset,
-)
-from timm.data import create_carla_dataset, create_carla_loader
-from timm.models import (
-    create_model,
-    safe_model_name,
-    resume_checkpoint,
-    load_checkpoint,
-    convert_splitbn_model,
-    model_parameters,
-)
-from timm.utils import *
-from timm.loss import (
-    LabelSmoothingCrossEntropy,
-    SoftTargetCrossEntropy,
-    JsdCrossEntropy,
-)
+from render import render
+
+from timm.data import create_carla_loader
+from timm.models import resume_checkpoint, load_checkpoint, model_parameters
 from timm.optim import create_optimizer_v2, optimizer_kwargs
 from timm.scheduler import create_scheduler
 from timm.utils import ApexScaler, NativeScaler
 
 from plato.trainers import basic
-from plato.callbacks.handler import CallbackHandler
-from plato.callbacks.trainer import LogProgressCallback
 from plato.config import Config
-from plato.models import registry as models_registry
-from plato.trainers import base, loss_criterion, lr_schedulers, optimizers, tracking
 
 class DriveTrainer(basic.Trainer):
     def __init__(self, args, model=None, callbacks=None):
@@ -78,7 +56,7 @@ class DriveTrainer(basic.Trainer):
     
     def get_test_loader(self, batch_size, testset, sampler, **kwargs):
         test_loader = create_carla_loader(
-            dataset_eval,
+            testset,
             input_size=data_config["input_size"],
             batch_size=self.args.validation_batch_size_multiplier * self.args.batch_size,
             multi_view_input_size=args.multi_view_input_size,

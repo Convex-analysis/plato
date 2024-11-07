@@ -8,6 +8,7 @@ import numpy as np
 from Origin_trainer import Origin_trainer
 from Origin_client import Origin_client
 from Origin_server import Origin_server
+from MaroScheduleServer import Macro_server  # Add this line to import Macro_server
 from plato.config import Config
 
 
@@ -44,11 +45,15 @@ class Scheme1_server(Origin_server):
 #Origin_server就是第三中我们自己的聚合方法
 
 def main():
+    with_MRscehduler = True
     #使用两层的cnn
     model = CNN_OriginalFedAvg
     trainer = Origin_trainer
     client = Origin_client(trainer=trainer)
-    server = Scheme1_server(trainer=trainer)
+    if with_MRscehduler:
+        server = Macro_server(trainer=trainer)
+    else:
+        server = Scheme1_server(trainer=trainer)
     server.run(client)
 
 
