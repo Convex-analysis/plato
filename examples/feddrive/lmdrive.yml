@@ -146,10 +146,10 @@ clip-mode:
 
 # Learning rate schedule parameters
 # default="cosine", type=str, metavar="SCHEDULER", help='LR scheduler (default: "step"'
-#第一次调用是在scheduler_factory.py中的create_scheduler_v2函数中，默认为cosine
+#第一次调用是在scheduler_factory.py中的create_scheduler_v2函数中,默认为cosine
 sched:
 #type=float, default=5e-4, metavar="LR", help="learning rate (default: 0.01)"
-#第一次调用是在drivetrainer.py的get_optimizer中使用，在计算了linear_scaled_lr，对args.lr重新进行了赋值
+#第一次调用是在drivetrainer.py的get_optimizer中使用,在计算了linear_scaled_lr,对args.lr重新进行了赋值
 lr:
 #type=float, nargs="+", default=None, metavar="pct, pct", help="learning rate noise on/off epoch percentages"
 lr-noise:
@@ -177,7 +177,7 @@ cooldown-epochs:
 patience-epochs:
 #type=float, default=0.1, help="LR decay rate (default: 0.1)"
 decay-rate:
-###这上面所有和lrcheduler有关的参数都是在scheduler_factory.py中的create_scheduler_v2函数中使用的,并存在scheduler_kwargs这个函数里面，有默认值，而且没有在其他地方重新赋值
+###这上面所有和lrcheduler有关的参数都是在scheduler_factory.py中的create_scheduler_v2函数中使用的,并存在scheduler_kwargs这个函数里面,有默认值,而且没有在其他地方重新赋值
 
 #type=float, default=0.0, help="epoch repeat multiplier (number of times to repeat dataset epoch per train epoch)."
 #没有找到这个参数在哪里使用
@@ -191,6 +191,17 @@ start-epoch:
 
 
 # Augmentation & regularization parameters
+#范围：129-169  超参数基本作用：增强与正则超参数
+
+*******简单来说,只有scale需要,其他的都可以删,一共需要删除的行号为：488-494,503-597,1190-1192,1195-1198,943-946******
+
+# Augmentation & regularization parameters
+#1.#type=float, default=[0.08, 1.0], metavar="PCT", help="Random resize scale (default: 0.08 1.0)",
+scale:
+#1164行,当前sh脚本设置的为0.9 1.1 , 作用是随机缩放比例范围,主要作用是在create_carla_loader时,创建各个create_carla_rgb_transform时,决定图像的随机缩放比例
+
+
+*******下面这几个完全没提过******
 #default=False, help="Disable all training augmentation, override other train aug args"
 no-aug:
 #type=float, default=[0.08, 1.0], metavar="PCT", help="Random resize scale (default: 0.08 1.0)",
@@ -217,29 +228,46 @@ remode:
 recount:
 #default=False, help="Do not random erase first (clean) augmentation split"
 resplit:
+
+#*******可能是原作者调损失函数用的,后来也没用了,可以直接删,也要在pretrain里面把main对应if判断的删掉******
+
 #type=float, default=0.0, help="Label smoothing (default: 0.0)"
 smoothing:
+#1151行,没有在sh设置,决定cls_loss是用标签平滑损失函数,还是用交叉熵损失函数
+
 #default=False, action='store_true', help="L1 smooth"
 smoothed_l1:
-#default="random", help='Training interpolation (random, bilinear, bicubic default: "random")'
-train-interpolation:
+#1156行,虽然在sh中设置,但是没有用,实际用的损失函数是：LAVLoss()
+
+#*******下面需要把pretrain里面create_model传参也删掉,因为timm create_model提到,但是memfuser不需要,以后如果换模型,可以再考虑
+
 #type=float, default=0.0, metavar="PCT", help="Dropout rate (default: 0.)"
 drop:
+#943行,没有在sh设置,当前在create_model时传入,功能是随机丢弃一些神经元的概率
+
 #type=float, default=None, help="Drop connect rate, DEPRECATED, use drop-path (default: None)"
 drop-connect:
+#944行,没有在sh设置,当前在create_model时传入,功能等同于下面的drop-path,已经被废除,但是不能直接删了,需要设置默认为None
+
 #type=float, default=0.1, help="Drop path rate (default: None)"
 drop-path:
+#945行,没有在sh设置,当前在create_model时传入,功能是会随机丢弃整个路径的概率,而不是单个连接或神经元,默认是0.1
+
 #type=float, default=None, help="Drop block rate (default: None)"
 drop-block:
+#946行,没有在sh设置,当前在create_model时传入,功能是会随机丢弃特征图上的连续区域块,默认是None
 
+
+########## 只有 EfficientNet 和 MobileNetV3 需要这三个参数，这部分可以去掉
 # Batch norm parameters (only works with gen_efficientnet based models currently)
-
 #default=False, help="Use Tensorflow BatchNorm defaults for models that support it (default: False)"
 bn-tf:
 #default=None, help="BatchNorm momentum override (if not None)"
 bn-momentum:
 #default=None, help="BatchNorm epsilon override (if not None)"
 bn-eps:
+
+########## 分布式用的，这部分可以去掉
 #help="Enable NVIDIA Apex or Torch synchronized BatchNorm."
 sync-bn:
 #default="", help='Distribute BatchNorm stats between nodes after each epoch ("broadcast", "reduce", or "")'
@@ -247,6 +275,7 @@ dist-bn:
 #help="Enable separate BN layers per augmentation split."
 split-bn:
 
+########## EMA 用的，这部分可以去掉
 # Model Exponential Moving Average
 
 #default=False, help="Enable tracking moving average of model weights"
@@ -256,17 +285,7 @@ model-ema-force-cpu:
 #default=0.9998, help="decay factor for model weights moving average (default: 0.9998)"
 model-ema-decay:
 
-# Misc
-#type=int, default=42, metavar="S", help="random seed (default: 42)"
-seed:
-#default=50, help="how many batches to wait before logging training status"
-log-interval:
-#default=0, help="how many batches to wait before writing recovery checkpoint",
-recovery-interval:
-#default=5, help="number of checkpoints to keep (default: 10)"
-checkpoint-hist:
-#default=4, help="how many training processes to use (default: 1)"
-workers:
+########## 默认情况下，这些参数涉及的代码没用上，这部分可以去掉
 #default=False, help="save images of input bathes every log interval for debugging"
 save-images:
 # default=False, help="use NVIDIA Apex AMP or Native AMP for mixed precision training"
@@ -281,12 +300,6 @@ channels-last:
 pin-mem:
 #default=False, help="disable fast prefetcher"
 no-prefetcher:
-#help="path to output folder (default: none, current dir)"
-output:
-#default="", help="name of train experiment, name of sub-folder for output"
-experiment:
-#default="top1", type=str,  metavar="EVAL_METRIC", help='Best metric (default: "top1"'
-eval-metric:
 #default=0, help="Test/inference time augmentation (oversampling) factor. 0=None (default: 0)"
 tta:
 #default=0, type=int
@@ -295,8 +308,26 @@ local-rank:
 use-multi-epochs-loader:
 #help="convert model torchscript for inference"
 torchscript:
+
+
+
+########## 这些都得留，保持默认就行
+# Misc
+#type=int, default=42, metavar="S", help="random seed (default: 42)"
+seed:
+#default=50, help="how many batches to wait before logging training status"
+log-interval:
+#default=0, help="how many batches to wait before writing recovery checkpoint",
+recovery-interval:
+#default=5, help="number of checkpoints to keep (default: 10)"
+checkpoint-hist:
+#default=4, help="how many training processes to use (default: 1)"
+workers:
+#help="path to output folder (default: none, current dir)"
+output:
+#default="", help="name of train experiment, name of sub-folder for output"
+experiment:
+#default="top1", type=str,  metavar="EVAL_METRIC", help='Best metric (default: "top1"'
+eval-metric:
 #default=False, help="log training and validation metrics to wandb"
 log-wandb:
-
-
-
