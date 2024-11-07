@@ -52,7 +52,12 @@ class DriveTrainer(basic.Trainer):
         super().__init__(model, callbacks)
         self.args = args
 
-    def get_train_loader(self, batch_size, trainset, sampler=None, **kwargs):
+    def get_train_loader(self, batch_size, trainset, sampler, **kwargs):
+        # create data loaders w/ augmentation pipeiine
+        train_interpolation = args.train_interpolation
+        if args.no_aug or not train_interpolation:
+            train_interpolation = data_config["interpolation"]
+
         train_loader = create_carla_loader(
             trainset,
             input_size=data_config["input_size"],
@@ -71,9 +76,9 @@ class DriveTrainer(basic.Trainer):
         )
         return train_loader
     
-    def get_test_loader(self, batch_size, testset, sampler=None, **kwargs):
+    def get_test_loader(self, batch_size, testset, sampler, **kwargs):
         test_loader = create_carla_loader(
-            testset,
+            dataset_eval,
             input_size=data_config["input_size"],
             batch_size=self.args.validation_batch_size_multiplier * self.args.batch_size,
             multi_view_input_size=args.multi_view_input_size,
@@ -127,6 +132,22 @@ class DriveTrainer(basic.Trainer):
             optimizer = create_optimizer_v2(model, **optimizer_kwargs(cfg=self.args))
         
         return optimizer
+
+    def train_process(self, config, trainset, sampler, **kwargs):
+        try:
+            if sampler is None:
+                self.train_model(config, trainset, **kwargs)
+            else:
+                self.train_model(config, trainset, sampler.get(), **kwargs)
+        except Exception as training_exception:
+            logging.info("Training on client #%d failed.", self.client_id)
+            raise training_exception
+
+        if "max_concurrency" in config:
+            self.model.cpu()
+            model_name = config["model_name"]
+            filename = f"{model_name}_{self.client_id}_{config['run_id']}.pth"
+            self.save_model(filename)
     
     def train_model(self, config, trainset, sampler, **kwargs):
         batch_size = config["batch_size"]
@@ -153,20 +174,106 @@ class DriveTrainer(basic.Trainer):
 
         total_epochs = config["epochs"]
 
-        for self.current_epoch in range(1, total_epochs + 1):
+        # train_pretrain.py
+        # resolve AMP arguments based on PyTorch / Apex availability
+        use_amp = None
+        if args.amp:
+            # `--amp` chooses native amp before apex (APEX ver not actively maintained)
+            if has_native_amp:
+                args.native_amp = True
+            elif has_apex:
+                args.apex_amp = True
+        if args.apex_amp and has_apex:
+            use_amp = "apex"
+        elif args.native_amp and has_native_amp:
+            use_amp = "native"
+        elif args.apex_amp or args.native_amp:
+            _logger.warning(
+                "Neither APEX or native Torch AMP is available, using float32. "
+                "Install NVIDA apex or upgrade to PyTorch 1.6"
+            )
+
+            # setup automatic mixed-precision (AMP) loss scaling and op casting
+        amp_autocast = suppress  # do nothing
+        loss_scaler = None
+        if use_amp == "apex":
+            model, optimizer = amp.initialize(model, optimizer, opt_level="O1")
+            loss_scaler = ApexScaler()
+            if args.local_rank == 0:
+                _logger.info("Using NVIDIA APEX AMP. Training in mixed precision.")
+        elif use_amp == "native":
+            amp_autocast = torch.cuda.amp.autocast
+            loss_scaler = NativeScaler()
+            if args.local_rank == 0:
+                _logger.info("Using native Torch AMP. Training in mixed precision.")
+        else:
+            if args.local_rank == 0:
+                _logger.info("AMP not enabled. Training in float32.")
+
+            # optionally resume from a checkpoint
+        resume_epoch = None
+        if args.resume:
+            resume_epoch = resume_checkpoint(
+                model,
+                args.resume,
+                optimizer=None if args.no_resume_opt else optimizer,
+                loss_scaler=None if args.no_resume_opt else loss_scaler,
+                log_info=args.local_rank == 0,
+            )
+
+        # setup exponential moving average of model weights, SWA could be used here too
+        model_ema = None
+        if args.model_ema:
+            # Important to create EMA model after cuda(), DP wrapper, and AMP but before SyncBN and DDP wrapper
+            model_ema = ModelEmaV2(
+                model,
+                decay=args.model_ema_decay,
+                device="cpu" if args.model_ema_force_cpu else None,
+            )
+            if args.resume:
+                load_checkpoint(model_ema.module, args.resume, use_ema=True)
+
+        # setup distributed training
+        if args.distributed:
+            if has_apex and use_amp != "native":
+                # Apex DDP preferred unless native amp is activated
+                if args.local_rank == 0:
+                    _logger.info("Using NVIDIA APEX DistributedDataParallel.")
+                model = ApexDDP(model, delay_allreduce=True)
+            else:
+                if args.local_rank == 0:
+                    _logger.info("Using native Torch DistributedDataParallel.")
+                model = NativeDDP(
+                    model, device_ids=[args.local_rank], find_unused_parameters=False
+                )  # can use device str in Torch >= 1.1
+
+        # NOTE: EMA model does not need to be wrapped by DDP
+        start_epoch = 0
+        if args.start_epoch is not None:
+            # a specified start_epoch will always override the resume epoch
+            start_epoch = args.start_epoch
+        elif resume_epoch is not None:
+            start_epoch = resume_epoch
+        if lr_scheduler is not None and start_epoch > 0:
+            lr_scheduler.step(start_epoch)
+
+        if args.local_rank == 0:
+            _logger.info("Scheduled epochs: {}".format(num_epochs))
+
+        for current_epoch in range(start_epoch, total_epochs + 1):
             self._loss_tracker.reset()
             self.train_epoch_start(config)
             self.callback_handler.call_event("on_train_epoch_start", self, config)
 
             train_metrics = self.train_one_epoch(
-                self.current_epoch,
+                epoch,
                 model,
-                self.train_loader,
-                self.optimizer,
-                self._loss_criterion,
+                loader_train,
+                optimizer,
+                train_loss_fns,
                 self.args,
                 writer,
-                lr_scheduler=self.lr_scheduler,
+                lr_scheduler=lr_scheduler,
                 saver=saver,
                 output_dir=output_dir,
                 amp_autocast=amp_autocast,
@@ -176,7 +283,7 @@ class DriveTrainer(basic.Trainer):
             )
 
             #self.lr_scheduler_step()
-            self.lr_scheduler.step(epoch + 1, eval_metrics[eval_metric])
+            lr_scheduler.step(epoch + 1, eval_metrics[eval_metric])
 
             if hasattr(self.optimizer, "params_state_update"):
                 self.optimizer.params_state_update()
@@ -210,11 +317,6 @@ class DriveTrainer(basic.Trainer):
         self.callback_handler.call_event("on_train_run_end", self, config)
     
     def test_model(self, config, testset, sampler=None, **kwargs):
-        if args.smoothing > 0:
-            cls_loss = LabelSmoothingCrossEntropy(smoothing=args.smoothing)
-        else:
-            cls_loss = nn.CrossEntropyLoss()
-            
         loader_eval = self.get_test_loader(config["batch_size"], testset, sampler)
         validate_loss_fns = {
             #"traffic": MVTL1Loss(1.0, l1_loss=l1_loss),
@@ -235,11 +337,6 @@ class DriveTrainer(basic.Trainer):
         return eval_metrics
     
     def get_loss_criterion(self):
-        if args.smoothing > 0:
-            cls_loss = LabelSmoothingCrossEntropy(smoothing=args.smoothing)
-        else:
-            cls_loss = nn.CrossEntropyLoss()
-            
         train_loss_fns = {
             #"traffic": MVTL1Loss(1.0, l1_loss=l1_loss),
             "traffic": LAVLoss(),

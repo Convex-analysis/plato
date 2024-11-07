@@ -1,93 +1,147 @@
+# important
 #type=int, default=[0], help="dataset train towns (default: [0])" from 1 to 10
-train-towns: 
-
+# used in Class CarlaMVDetDataset in carla_dataset.py to load the training data in which towns.
+train-towns:
 #type=int, default=[0], help="dataset train weathers (default: [0])" from 1 to 20
+# used in Class CarlaMVDetDataset in carla_dataset.py to load the training data in which weathers.
 train-weathers:
-
 #type=int, default=[1], help="dataset validation towns (default: [1])" from 1 to 10
+# used in Class CarlaMVDetDataset in carla_dataset.py to load the test data in which towns.
 val-towns:
-
 #type=int, default=[1], help="dataset validation weathers (default: [1])" from 1 to 20
+# used in Class CarlaMVDetDataset in carla_dataset.py to load the test data in which weathers.
 val-weathers:
-
-#default=False help="StarAt with pretrained version of specified network (if avail)"
-saver-decreasing: 
-
+# actually, there is no flag to distinguish training or test data in CarlaMVDetDataset.
 #default=False, help="load lidar data in the dataset",
-with-lidar:
-#default=False, help="load segmentation data in the dataset"
-with-seg:
-#default=False, help="load depth data in the dataset"
-with-depth:
-#default=False, help="load multi-view data in the dataset"
-multi-view:
-#default=None, nargs=3, type=int, metavar="N N N", help="Input all image dimensions (d h w, e.g. --input-size 3 224 224) for left- right- or rear- view"
-multi-view-input-size:
-#type=int, default=1, help="Number of frames of the input"
-temporal-frames:
-#type=int, default=-1, help="Number of freeze layers in the backbone"
-freeze-num:
+# used in Class CarlaMVDetDataset in carla_dataset.py to load the lidar data.
+with-lidar: True
 #type=float, default=5e-4, help="The learning rate for backbone"
+# used in func get_optimizer in drivetrainer.py v(0.0003)
+# should combine with parameters.optimizer.lr in plato config
 backbone-lr:
 #default=False, help="The learning rate for backbone is set as backbone-lr"
+# should combine with parameters.optimizer.lr in plato config v
 with-backbone-lr:
-
-# Dataset / Model parameters
 #help="path to dataset"
+# used in Class CarlaMVDetDataset in carla_dataset.py
 data_dir:
 #metavar="NAME", default="newcarla", help="dataset type (default: ImageFolder/ImageTar if empty)"
+# used in lass CarlaMVDetDataset in carla_dataset.py v(carla)
 dataset:
-#default="train", help="dataset train split (default: train)"
-train-split:
-#default="validation", help="dataset validation split (default: validation)",
-val-split:
 #default="resnet101", type=str, metavar="MODEL", help='Name of model to train (default: "countception"'
+# used in create_model in auto_driving.py v(memfuser_baseline_e1d3)
 model:
-#default=False, help="Start with pretrained version of specified network (if avail)",
-pretrained:
-#default="", type=str, metavar="PATH", help="Initialize model from this checkpoint (default: none)"
+#type=int, default=32, metavar="N", help="input batch size for training (default: 32)",
+# used in func create_carla_loader in drivetrainer.py to set the batch_size of loader
+# should combine with trainer.batch_size in plato
+batch-size:
+# Optimizer parameters
+#default="sgd", type=str, metavar="OPTIMIZER", help='Optimizer (default: "sgd"'
+# used in function create_optimizer_v2 in drivetrainer.py to set optimizer v(adamw)
+# should combine with trainer.optimizer
+opt:
+#default=None, type=float, metavar="EPSILON", help="Optimizer Epsilon (default: None, use opt default)"
+# used in function create_optimizer_v2 in drivetrainer.py to set optimizer v(1e-8)
+opt-eps:
+#default=None, type=float, metavar="BETA", help="Optimizer Betas (default: None, use opt default)"
+#### optional
+opt-betas:
+#type=float, default=0.9, metavar="M", help="Optimizer momentum (default: 0.9)"
+momentum:
+#type=float, default=0.0001, help="weight decay (default: 0.0001)" v(0.05)
+weight-decay:
+
+
+
+
+# not used
+#default=False help="StarAt with pretrained version of specified network (if avail)"
+saver-decreasing:
+#type=int, default=1, help="Number of frames of the input"
+# used in Class CarlaMVDetDataset in carla_dataset.py to  (datasource.py). x not used
+temporal-frames:
+#type=int, default=-1, help="Number of freeze layers in the backbone"
+# used in func create_model in model.factory.py, but it's not used. v(-1)
+freeze-num:
+#default="train", help="dataset train split (default: train)" not used
+train-split:
+#default="validation", help="dataset validation split (default: validation)", not used
+val-split:
+#default="", type=str, metavar="PATH", help="Initialize model from this checkpoint (default: none)"  not used
 initial-checkpoint:
-# default="", type=str, metavar="PATH", help="Resume full model and optimizer state from checkpoint (default: none)",
-resume:
 #action="store_true",default=False,help="prevent resume of optimizer state when resuming model",
 no-resume-opt:
 #type=int, default=None, metavar="N", help="number of label classes (Model default if None)"
 num-classes:
 #default=None, type=str, metavar="POOL", help="Global pool type, one of (fast, avg, max, avgmax, avgmaxc). Model default if None."
+# used in create_model in auto_driving.py not used
 gp:
 #type=int, default=None, metavar="N", help="Image patch size (default: None => model default)"
 img-size:
-#default=None, nargs=3, type=int, metavar="N N N", help="Input all image dimensions (d h w, e.g. --input-size 3 224 224), uses model default if empty",
-input-size:
 #default=None, type=float, metavar="N", help="Input image center crop percent (for validation only)",
 crop-pct:
 #type=float, nargs="+", default=None, metavar="MEAN", help="Override mean pixel value of dataset",
+# used in drivetrainer.py, but the mean and std are not loaded from config but from timm/data/constants.py
 mean:
 #type=float, default=None, metavar="STD", help="Override std deviation of of dataset",
 std:
 #default="", type=str, metavar="NAME", help="Image resize interpolation type (overrides model)"
+# used in func create_carla_loader in drivetrainer.py to config rgb_transformer,
+# but in func rgb_transformer, 'interpolation' is set up as 'bilinear' and not used.
 interpolation:
-#type=int, default=32, metavar="N", help="input batch size for training (default: 32)",
-batch-size:
 #type=int, default=1, metavar="N", help="ratio of validation batch size to training batch size (default: 1)"
+# used in func create_carla_loader (test loader) in drivetrainer.py, but not used
 validation-batch-size-multiplier:
 #type=float, default=0.0,
+# used in func create_carla_dataset in datasource.py, but not used.
 augment-prob:
 
-# Optimizer parameters
-#default="sgd", type=str, metavar="OPTIMIZER", help='Optimizer (default: "sgd"'
-opt:
-#default=None, type=float, metavar="EPSILON", help="Optimizer Epsilon (default: None, use opt default)"
-opt-eps:
-#default=None, type=float, metavar="BETA", help="Optimizer Betas (default: None, use opt default)"
-opt-betas:
-#type=float, default=0.9, metavar="M", help="Optimizer momentum (default: 0.9)"
-momentum:
-#type=float, default=0.0001, help="weight decay (default: 0.0001)"
-weight-decay:
+
+
+
+
+
+# not sure
+#default=False, help="load segmentation data in the dataset"
+# used in Class CarlaMVDetDataset in carla_dataset.py to load the segmentation data stored in data["seg"]. x
+with-seg:
+
+#default=False, help="load depth data in the dataset"
+# used in Class CarlaMVDetDataset in carla_dataset.py to load the depth data stored in data["depth"]. x
+with-depth:
+
+#default=False, help="load multi-view data in the dataset"
+# used in Class CarlaMVDetDataset in carla_dataset.py to load the multi-view data (datasource.py). v
+# it's usually used with 'with-seg' and 'with-depth', but it can also be used independently
+#  with 'multi_view_transform' to transform the raw rgb data.
+multi-view:
+
+#default=None, nargs=3, type=int, metavar="N N N", help="Input all image dimensions (d h w, e.g. --input-size 3 224 224) for left- right- or rear- view"
+# used in func create_carla_loader in carla_loader.py to set dataset.multi_view_transform in func create_carla_rgb_transform in transforms_carla_factory.py
+# 3 128 128  v
+multi-view-input-size:
+
+# Dataset / Model parameters
+#default=False, help="Start with pretrained version of specified network (if avail)",
+# used in create_model in auto_driving.py not found in used. The pretrained attribution for Resnet50/26 is True. v
+pretrained:
+
+# default="", type=str, metavar="PATH", help="Resume full model and optimizer state from checkpoint (default: none)",
+# only used in train_pretrain.py, but not combine with plato
+resume:
+
+#default=None, nargs=3, type=int, metavar="N N N", help="Input all image dimensions (d h w, e.g. --input-size 3 224 224), uses model default if empty",
+# used in func create_carla_loader in drivetrainer.py to create rgb_transformer
+# similar with multi-view-input-size x
+input-size:
+
 #type=float, default=None, metavar="NORM", help="Clip gradient norm (default: None, no clipping)",
+# used in func train_one_epoch in drivetrainer.py. if loss_scaler is not none, clip-grad is used. v(5)
+# in train_pretrain.py, when 'use_amp' is set, loss_scaler is not none.
 clip-grad:
+
 #type=str, default="norm", help='Gradient clipping mode. One of ("norm", "value", "agc")'
+# similar with clip-grad. x
 clip-mode:
 
 # Learning rate schedule parameters
