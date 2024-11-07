@@ -1,12 +1,58 @@
-from plato.trainers import basic
+import argparse
+import time
+import yaml
+import os
+import logging
+from collections import OrderedDict
+from contextlib import suppress
+from datetime import datetime
+from render import render, render_waypoints
 
+import torch
+import torch.nn as nn
+import torchvision.utils
+from torch.nn.parallel import DistributedDataParallel as NativeDDP
+
+from timm.data import (
+    create_dataset,
+    create_loader,
+    resolve_data_config,
+    Mixup,
+    FastCollateMixup,
+    AugMixDataset,
+)
+from timm.data import create_carla_dataset, create_carla_loader
+from timm.models import (
+    create_model,
+    safe_model_name,
+    resume_checkpoint,
+    load_checkpoint,
+    convert_splitbn_model,
+    model_parameters,
+)
+from timm.utils import *
+from timm.loss import (
+    LabelSmoothingCrossEntropy,
+    SoftTargetCrossEntropy,
+    JsdCrossEntropy,
+)
+from timm.optim import create_optimizer_v2, optimizer_kwargs
+from timm.scheduler import create_scheduler
+from timm.utils import ApexScaler, NativeScaler
+
+from plato.trainers import basic
+from plato.callbacks.handler import CallbackHandler
+from plato.callbacks.trainer import LogProgressCallback
+from plato.config import Config
+from plato.models import registry as models_registry
+from plato.trainers import base, loss_criterion, lr_schedulers, optimizers, tracking
 
 class DriveTrainer(basic.Trainer):
     def __init__(self, args, model=None, callbacks=None):
         super().__init__(model, callbacks)
         self.args = args
 
-    def get_train_loader(self, batch_size, trainset, sampler, **kwargs):
+    def get_train_loader(self, batch_size, trainset, sampler=None, **kwargs):
         train_loader = create_carla_loader(
             trainset,
             input_size=data_config["input_size"],
@@ -25,9 +71,9 @@ class DriveTrainer(basic.Trainer):
         )
         return train_loader
     
-    def get_test_loader(self, batch_size, testset, sampler, **kwargs):
+    def get_test_loader(self, batch_size, testset, sampler=None, **kwargs):
         test_loader = create_carla_loader(
-            dataset_eval,
+            testset,
             input_size=data_config["input_size"],
             batch_size=self.args.validation_batch_size_multiplier * self.args.batch_size,
             multi_view_input_size=args.multi_view_input_size,
@@ -113,14 +159,14 @@ class DriveTrainer(basic.Trainer):
             self.callback_handler.call_event("on_train_epoch_start", self, config)
 
             train_metrics = self.train_one_epoch(
-                epoch,
+                self.current_epoch,
                 model,
-                loader_train,
-                optimizer,
-                train_loss_fns,
+                self.train_loader,
+                self.optimizer,
+                self._loss_criterion,
                 self.args,
                 writer,
-                lr_scheduler=lr_scheduler,
+                lr_scheduler=self.lr_scheduler,
                 saver=saver,
                 output_dir=output_dir,
                 amp_autocast=amp_autocast,
@@ -130,7 +176,7 @@ class DriveTrainer(basic.Trainer):
             )
 
             #self.lr_scheduler_step()
-            lr_scheduler.step(epoch + 1, eval_metrics[eval_metric])
+            self.lr_scheduler.step(epoch + 1, eval_metrics[eval_metric])
 
             if hasattr(self.optimizer, "params_state_update"):
                 self.optimizer.params_state_update()
@@ -164,7 +210,11 @@ class DriveTrainer(basic.Trainer):
         self.callback_handler.call_event("on_train_run_end", self, config)
     
     def test_model(self, config, testset, sampler=None, **kwargs):
-        
+        if args.smoothing > 0:
+            cls_loss = LabelSmoothingCrossEntropy(smoothing=args.smoothing)
+        else:
+            cls_loss = nn.CrossEntropyLoss()
+            
         loader_eval = self.get_test_loader(config["batch_size"], testset, sampler)
         validate_loss_fns = {
             #"traffic": MVTL1Loss(1.0, l1_loss=l1_loss),
@@ -185,6 +235,11 @@ class DriveTrainer(basic.Trainer):
         return eval_metrics
     
     def get_loss_criterion(self):
+        if args.smoothing > 0:
+            cls_loss = LabelSmoothingCrossEntropy(smoothing=args.smoothing)
+        else:
+            cls_loss = nn.CrossEntropyLoss()
+            
         train_loss_fns = {
             #"traffic": MVTL1Loss(1.0, l1_loss=l1_loss),
             "traffic": LAVLoss(),

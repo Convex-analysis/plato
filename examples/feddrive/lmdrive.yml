@@ -113,20 +113,28 @@ warmup-lr:
 min-lr:
 #type=int, default=200, help="number of epochs to train (default: 2)"
 epochs:
-#type=float, default=0.0, help="epoch repeat multiplier (number of times to repeat dataset epoch per train epoch)."
-epoch-repeats:
-#default=None, type=int, help="manual epoch number (useful on restarts)"
-start-epoch:
-#type=float, default=30, help="epoch interval to decay LR"
-decay-epochs:
 #type=int, default=5, help="epochs to warmup LR, if scheduler supports"
 warmup-epochs:
+#type=float, default=30, help="epoch interval to decay LR"
+decay-epochs:
 #type=int, default=10, help="epochs to cooldown LR at min_lr, after cyclic schedule ends"
 cooldown-epochs:
 #type=int, default=10, help="patience epochs for Plateau LR scheduler (default: 10"
 patience-epochs:
 #type=float, default=0.1, help="LR decay rate (default: 0.1)"
 decay-rate:
+###这上面所有和lrcheduler有关的参数都是在scheduler_factory.py中的create_scheduler_v2函数中使用的,并存在scheduler_kwargs这个函数里面，有默认值，而且没有在其他地方重新赋值
+
+#type=float, default=0.0, help="epoch repeat multiplier (number of times to repeat dataset epoch per train epoch)."
+#没有找到这个参数在哪里使用
+epoch-repeats:
+#default=None, type=int, help="manual epoch number (useful on restarts)"
+#没有找到这个参数在哪里使用
+start-epoch:
+
+
+
+
 
 # Augmentation & regularization parameters
 #default=False, help="Disable all training augmentation, override other train aug args"
