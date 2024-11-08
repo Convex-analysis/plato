@@ -1,0 +1,108 @@
+#type=int, default=[0], help="dataset train towns (default: [0])" from 1 to 10
+# used in Class CarlaMVDetDataset in carla_dataset.py to load the training data in which towns.
+train-towns:
+#type=int, default=[0], help="dataset train weathers (default: [0])" from 1 to 20
+# used in Class CarlaMVDetDataset in carla_dataset.py to load the training data in which weathers.
+train-weathers:
+#type=int, default=[1], help="dataset validation towns (default: [1])" from 1 to 10
+# used in Class CarlaMVDetDataset in carla_dataset.py to load the test data in which towns.
+val-towns:
+#type=int, default=[1], help="dataset validation weathers (default: [1])" from 1 to 20
+# used in Class CarlaMVDetDataset in carla_dataset.py to load the test data in which weathers.
+val-weathers:
+# actually, there is no flag to distinguish training or test data in CarlaMVDetDataset.
+#default=False, help="load lidar data in the dataset",
+# used in Class CarlaMVDetDataset in carla_dataset.py to load the lidar data.
+with-lidar: True
+#type=float, default=5e-4, help="The learning rate for backbone"
+# used in func get_optimizer in drivetrainer.py v(0.0003)
+# should combine with parameters.optimizer.lr in plato config
+backbone-lr:
+#default=False, help="The learning rate for backbone is set as backbone-lr"
+# should combine with parameters.optimizer.lr in plato config v
+with-backbone-lr:
+#help="path to dataset"
+# used in Class CarlaMVDetDataset in carla_dataset.py
+data_dir:
+#metavar="NAME", default="newcarla", help="dataset type (default: ImageFolder/ImageTar if empty)"
+# used in lass CarlaMVDetDataset in carla_dataset.py v(carla)
+dataset:
+#default="resnet101", type=str, metavar="MODEL", help='Name of model to train (default: "countception"'
+# used in create_model in auto_driving.py v(memfuser_baseline_e1d3)
+model:
+#type=int, default=32, metavar="N", help="input batch size for training (default: 32)",
+# used in func create_carla_loader in drivetrainer.py to set the batch_size of loader
+# should combine with trainer.batch_size in plato
+batch-size:
+# Optimizer parameters
+#default="sgd", type=str, metavar="OPTIMIZER", help='Optimizer (default: "sgd"'
+# used in function create_optimizer_v2 in drivetrainer.py to set optimizer v(adamw)
+# should combine with trainer.optimizer
+opt:
+#default=None, type=float, metavar="EPSILON", help="Optimizer Epsilon (default: None, use opt default)"
+# used in function create_optimizer_v2 in drivetrainer.py to set optimizer v(1e-8)
+opt-eps:
+#default=None, type=float, metavar="BETA", help="Optimizer Betas (default: None, use opt default)"
+#### optional
+opt-betas:
+#type=float, default=0.9, metavar="M", help="Optimizer momentum (default: 0.9)"
+momentum:
+#type=float, default=0.0001, help="weight decay (default: 0.0001)" v(0.05)
+weight-decay:
+# Learning rate schedule parameters
+# default="cosine", type=str, metavar="SCHEDULER", help='LR scheduler (default: "step"'
+#第一次调用是在scheduler_factory.py中的create_scheduler_v2函数中,默认为cosine
+sched:
+#type=float, default=5e-4, metavar="LR", help="learning rate (default: 0.01)"
+#第一次调用是在drivetrainer.py的get_optimizer中使用,在计算了linear_scaled_lr,对args.lr重新进行了赋值
+lr:
+#type=float, nargs="+", default=None, metavar="pct, pct", help="learning rate noise on/off epoch percentages"
+lr-noise:
+#type=float, default=0.67, metavar="PERCENT", help="learning rate noise limit percent (default: 0.67)"
+lr-noise-pct:
+#type=float, default=1.0, metavar="STDDEV", help="learning rate noise std-dev (default: 1.0)"
+lr-noise-std:
+#type=float, default=1.0, help="learning rate cycle len multiplier (default: 1.0)"
+lr-cycle-mul:
+#type=int, default=1, help="learning rate cycle limit"
+lr-cycle-limit:
+#type=float, default=5e-6, help="warmup learning rate (default: 0.0001)",
+warmup-lr:
+#type=float, default=1e-5, metavar="LR", help="lower lr bound for cyclic schedulers that hit 0 (1e-5)"
+min-lr:
+#type=int, default=200, help="number of epochs to train (default: 2)"
+epochs:
+#type=int, default=5, help="epochs to warmup LR, if scheduler supports"
+warmup-epochs:
+#type=float, default=30, help="epoch interval to decay LR"
+decay-epochs:
+#type=int, default=10, help="epochs to cooldown LR at min_lr, after cyclic schedule ends"
+cooldown-epochs:
+#type=int, default=10, help="patience epochs for Plateau LR scheduler (default: 10"
+patience-epochs:
+#type=float, default=0.1, help="LR decay rate (default: 0.1)"
+decay-rate:
+###这上面所有和lrcheduler有关的参数都是在scheduler_factory.py中的create_scheduler_v2函数中使用的,并存在scheduler_kwargs这个函数里面,有默认值,而且没有在其他地方重新赋值
+# Augmentation & regularization parameters
+#1.#type=float, default=[0.08, 1.0], metavar="PCT", help="Random resize scale (default: 0.08 1.0)",
+scale:
+#1164行,当前sh脚本设置的为0.9 1.1 , 作用是随机缩放比例范围,主要作用是在create_carla_loader时,创建各个create_carla_rgb_transform时,决定图像的随机缩放比例
+# Misc
+#type=int, default=42, metavar="S", help="random seed (default: 42)"
+seed:
+#default=50, help="how many batches to wait before logging training status"
+log-interval:
+#default=0, help="how many batches to wait before writing recovery checkpoint",
+recovery-interval:
+#default=5, help="number of checkpoints to keep (default: 10)"
+checkpoint-hist:
+#default=4, help="how many training processes to use (default: 1)"
+workers:
+#help="path to output folder (default: none, current dir)"
+output:
+#default="", help="name of train experiment, name of sub-folder for output"
+experiment:
+#default="top1", type=str,  metavar="EVAL_METRIC", help='Best metric (default: "top1"'
+eval-metric:
+#default=False, help="log training and validation metrics to wandb"
+log-wandb:
