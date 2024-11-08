@@ -26,7 +26,19 @@ server:
     inbound_processors:
         - model_decompress
 
-data: !include mnist_iid.yml
+data: 
+    # The training and testing dataset
+    datasource: MNIST
+
+    # Number of samples in each partition
+    partition_size: 20000
+
+    # IID or non-IID?
+    sampler: iid
+
+    # The random seed for sampling data
+    random_seed: 1
+
 
 trainer:
     # The type of the trainer
