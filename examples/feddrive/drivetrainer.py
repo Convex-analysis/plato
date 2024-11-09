@@ -32,7 +32,7 @@ class DriveTrainer(basic.Trainer):
 
     def get_train_loader(self, batch_size, trainset, sampler, **kwargs):
         # create data loaders w/ augmentation pipeiine
-        train_interpolation = args.train_interpolation
+        train_interpolation = Config().parameters["train_interpolation"]
         if args.no_aug or not train_interpolation:
             train_interpolation = data_config["interpolation"]
 
