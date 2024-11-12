@@ -1,6 +1,7 @@
 import asyncio
 import logging
 import math
+import random
 import time
 from cnn import CNN_OriginalFedAvg
 import numpy as np
@@ -41,7 +42,7 @@ class Scheme1_server(Origin_server):
         if qualified_client_count == 0:
             logging.info("No client is qualified for aggregation.")
         return avg_update
-
+    
 #Origin_server就是第三中我们自己的聚合方法
 
 def main():
@@ -50,10 +51,8 @@ def main():
     model = CNN_OriginalFedAvg
     trainer = Origin_trainer
     client = Origin_client(trainer=trainer)
-    if with_MRscehduler:
-        server = Macro_server(trainer=trainer)
-    else:
-        server = Scheme1_server(trainer=trainer)
+    
+    server = Scheme1_server(trainer=trainer)
     server.run(client)
 
 

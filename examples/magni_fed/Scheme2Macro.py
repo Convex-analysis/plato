@@ -39,6 +39,22 @@ class Scheme2_server(Origin_server):
             # Yield to other tasks in the server
             await asyncio.sleep(0)
         return avg_update
+    def choose_clients(self, clients_pool, clients_count):
+            """Chooses a subset of the clients to participate in each round."""
+            #clients_count = math.floor(self.current_round / 10) + clients_count
+            if self.current_round % 20 == 0:
+                clients_count = clients_count + 1
+            if clients_count >= len(clients_pool):
+                clients_count = len(clients_pool)
+            self.clients_per_round = clients_count
+            random.setstate(self.prng_state)
+            # Select clients randomly
+            
+            selected_clients = random.sample(clients_pool, clients_count)
+
+            self.prng_state = random.getstate()
+            logging.info("[%s] Selected clients: %s", self, selected_clients)
+            return selected_clients
 #Origin_server就是第三中我们自己的聚合方法
 
 def main():

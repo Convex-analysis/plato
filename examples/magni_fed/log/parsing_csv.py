@@ -36,7 +36,7 @@ def add_average_column(file_path, output_file):
         df.to_csv(output_file, index=False)
 
 
-file_path = "C:\\Users\\79944\\Desktop\\temp_config\\data\\S2_E"
+file_path = "C:\\Users\\79944\\Desktop\\temp_config\\data\\S3_Fa"
 # Example usage
 file = merge_accuracy_columns(file_path)
 add_average_column(file_path, file)

@@ -60,8 +60,8 @@ def impact_of_noniid_on_shceme(filename):
     plt.savefig(filename + ".png")
 
 def impact_on_mobility(filename):
-    linestyles = ['-.', ':', 'solid', 'dashed', '-']
-    marks = ['.', '^', '<', '>', '+']
+    linestyles = ['-.', ':', 'solid', 'dashed', '-', '--']
+    marks = ['.', '^', '<', '>', '+', 'x']
     data = pd.read_csv(filename)
     aixs_x = data['round']
     aixs_y = []
