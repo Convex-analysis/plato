@@ -3,7 +3,7 @@ clients:
     type: simple
 
     # The total number of clients
-    total_clients: 1000
+    total_clients: 300
 
     # The number of clients selected in each round
     per_round: 5
@@ -20,7 +20,7 @@ data:
     datasource: CIFAR10
 
     # Number of samples in each partition
-    partition_size: 1000
+    partition_size: 200
 
     # IID or non-IID?
     sampler: noniid
@@ -28,7 +28,7 @@ data:
     concentration: 0.1
 
     # The random seed for sampling data
-    random_seed: 1
+    random_seed: 0.5
 
 trainer:
     # The type of the trainer
