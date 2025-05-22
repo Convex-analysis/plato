@@ -3,7 +3,6 @@
 import torch.distributed.pipeline as pp
 import torch.nn as nn
 import torch
-from torch.distributed.pipelining import ScheduleGPipe
 
 #genreate a Lenet model and split it into 2 stages
 class LeNet(nn.Module):
@@ -53,3 +52,19 @@ class LeNet_stage1(nn.Module):
         x = self.fc3(x)
         return x
 
+#pipeline parallelism
+def run(rank, world_size):
+    # Create model
+    model = LeNet()
+    model_stage0 = LeNet_stage0()
+    model_stage1 = LeNet_stage1()
+    # Create pipeline parallel model
+    ddp_model_stage0 = pp.DistributedDataParallel(model_stage0, device_ids=[rank])
+    ddp_model_stage1 = pp.DistributedDataParallel(model_stage1, device_ids=[rank])
+    # Create pipeline
+    pipeline = pp.Pipeline([ddp_model_stage0, ddp_model_stage1])
+    # Create random input
+    input = torch.randn(1, 1, 32, 32)
+    # Run the pipeline
+    output = pipeline(input)
+    print("Output: ", output)
