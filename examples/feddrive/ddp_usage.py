@@ -3,68 +3,50 @@
 import torch.distributed.pipeline as pp
 import torch.nn as nn
 import torch
+from torch.distributed.pipelining import ScheduleGPipe
 
 #genreate a Lenet model and split it into 2 stages
 class LeNet(nn.Module):
     def __init__(self):
-        super(LeNet, self).__init__()
-        self.conv1 = nn.Conv2d(1, 6, 5)
-        self.conv2 = nn.Conv2d(6, 16, 5)
-        self.fc1 = nn.Linear(16 * 5 * 5, 120)
-        self.fc2 = nn.Linear(120, 84)
-        self.fc3 = nn.Linear(84, 10)
+        super().__init__()
+        self.flatten = flow.nn.Flatten()
+        self.linear0 = flow.nn.Linear(28*28, 512)
+        self.relu0 = flow.nn.ReLU()
 
     def forward(self, x):
-        x = torch.nn.functional.relu(self.conv1(x))
-        x = torch.nn.functional.max_pool2d(x, 2)
-        x = torch.nn.functional.relu(self.conv2(x))
-        x = torch.nn.functional.max_pool2d(x, 2)
+        out = self.flatten(x)
+        out = self.linear0(out)
+        out = self.relu0(out)
+        return out
+
+class Stage1Module(flow.nn.Module):
+    def __init__(self):
+        super().__init__()
+        self.linear1 = flow.nn.Linear(512, 512)
+        self.relu1 = flow.nn.ReLU()
+        self.linear2 = flow.nn.Linear(512, 10)
+        self.relu2 = flow.nn.ReLU()
+
+    def forward(self, x):
+        out = self.linear1(x)
+        out = self.relu1(out)
+        out = self.linear2(out)
+        out = self.relu2(out)
+        return out
+
+class PipelineModule(flow.nn.Module):
+    def __init__(self):
+        super().__init__()
+        self.m_stage0 = Stage0Module()
+        self.m_stage1 = Stage1Module()
+
+        self.m_stage0.to_global(placement=P0, sbp=BROADCAST)
+        self.m_stage1.to_global(placement=P1, sbp=BROADCAST)
+
+    def forward(self, x):
         x = x.view(-1, 16 * 5 * 5)
         x = torch.nn.functional.relu(self.fc1(x))
         x = torch.nn.functional.relu(self.fc2(x))
         x = self.fc3(x)
         return x
 
-class LeNet_stage0(nn.Module):
-    def __init__(self):
-        super(LeNet_stage0, self).__init__()
-        self.conv1 = nn.Conv2d(1, 6, 5)
-        self.conv2 = nn.Conv2d(6, 16, 5)
-
-    def forward(self, x):
-        x = torch.nn.functional.relu(self.conv1(x))
-        x = torch.nn.functional.max_pool2d(x, 2)
-        x = torch.nn.functional.relu(self.conv2(x))
-        x = torch.nn.functional.max_pool2d(x, 2)
-        return x
-    
-class LeNet_stage1(nn.Module):
-    def __init__(self):
-        super(LeNet_stage1, self).__init__()
-        self.fc1 = nn.Linear(16 * 5 * 5, 120)
-        self.fc2 = nn.Linear(120, 84)
-        self.fc3 = nn.Linear(84, 10)
-
-    def forward(self, x):
-        x = x.view(-1, 16 * 5 * 5)
-        x = torch.nn.functional.relu(self.fc1(x))
-        x = torch.nn.functional.relu(self.fc2(x))
-        x = self.fc3(x)
-        return x
-
-#pipeline parallelism
-def run(rank, world_size):
-    # Create model
-    model = LeNet()
-    model_stage0 = LeNet_stage0()
-    model_stage1 = LeNet_stage1()
-    # Create pipeline parallel model
-    ddp_model_stage0 = pp.DistributedDataParallel(model_stage0, device_ids=[rank])
-    ddp_model_stage1 = pp.DistributedDataParallel(model_stage1, device_ids=[rank])
-    # Create pipeline
-    pipeline = pp.Pipeline([ddp_model_stage0, ddp_model_stage1])
-    # Create random input
-    input = torch.randn(1, 1, 32, 32)
-    # Run the pipeline
-    output = pipeline(input)
-    print("Output: ", output)
