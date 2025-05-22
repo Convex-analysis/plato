@@ -12,6 +12,8 @@ class Origin_trainer(basic.Trainer):
         self.client_quality = None
         self.epoch_rate = 1
         self.alpha = 1
+        self.epoch_losses = []
+        self.final_loss = 0.0
 
     def set_client_quality(self, quality):
         self.client_quality = quality
@@ -35,6 +37,8 @@ class Origin_trainer(basic.Trainer):
         tic = time.perf_counter()
 
         self.run_history.reset()
+        self.epoch_losses = []  # Reset epoch losses for this training run
+        self.final_loss = 0.0
 
         self.train_run_start(config)
         self.callback_handler.call_event("on_train_run_start", self, config)
@@ -115,7 +119,15 @@ class Origin_trainer(basic.Trainer):
                 self.save_model(filename)
                 self.model.to(self.device)
 
-            self.run_history.update_metric("train_loss", self._loss_tracker.average)
+            # Get and save the average loss for this epoch
+            epoch_loss = self._loss_tracker.average
+            self.run_history.update_metric("train_loss", epoch_loss)
+
+            # Store loss in memory for reporting
+            self.epoch_losses.append(epoch_loss)
+            # Update final loss with the latest epoch loss
+            self.final_loss = epoch_loss
+
             self.train_epoch_end(config)
             self.callback_handler.call_event("on_train_epoch_end", self, config)
 
@@ -125,3 +137,11 @@ class Origin_trainer(basic.Trainer):
     def save_magnified_parameters(self, filename):
         with open(filename, 'a') as f:
             f.write(f"{self.get_alpha()},{self.get_epoch_rate()},{os.getpid()}\n")
+
+    def get_epoch_losses(self):
+        """Return the list of loss values for all epochs."""
+        return self.epoch_losses
+
+    def get_final_loss(self):
+        """Return the final loss value from training."""
+        return self.final_loss

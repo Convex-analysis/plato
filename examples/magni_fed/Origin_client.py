@@ -95,6 +95,11 @@ class Origin_client(simple.Client):
         report.epoch_rate = self.trainer.get_epoch_rate()
         report.alpha = self.trainer.get_alpha()
 
+        # Add loss information to the report
+        if hasattr(self.trainer, 'get_final_loss'):
+            report.final_loss = self.trainer.get_final_loss()
+            logging.info(f"Client #{self.client_id} final loss: {report.final_loss}")
+
         #记录训练数据后将对应参数回归初始化设置
         self.trainer.set_epoch_rate(1)
         self.trainer.set_alpha(1)

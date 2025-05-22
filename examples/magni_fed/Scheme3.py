@@ -10,7 +10,7 @@ from Origin_client import Origin_client
 from Origin_server import Origin_server
 from plato.config import Config
 
-
+#AVFL
 def main():
     trainer = Origin_trainer
     client = Origin_client(trainer=trainer)

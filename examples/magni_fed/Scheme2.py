@@ -12,7 +12,7 @@ from Origin_server import Origin_server
 from plato.config import Config
 from MaroScheduleServer import Macro_server # Add this line to import Macro_server
 
-
+#FDP-FL
 #按执行的比例聚合
 class Scheme2_server(Origin_server):
     async def aggregate_deltas(self, updates, deltas_received):

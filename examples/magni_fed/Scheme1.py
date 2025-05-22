@@ -13,7 +13,7 @@ from MaroScheduleServer import Macro_server  # Add this line to import Macro_ser
 from plato.config import Config
 
 
-
+#FedAvg+FEDDATE-CS
 #不聚合不合格的client
 class Scheme1_server(Origin_server):
     async def aggregate_deltas(self, updates, deltas_received):
